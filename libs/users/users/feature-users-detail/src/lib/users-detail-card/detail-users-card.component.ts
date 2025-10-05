@@ -12,7 +12,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { onSuccessEditionCbType } from '@users/users/data-access';
+import { onSuccessEditionCbType, onSuccessSPonCbType } from '@users/users/data-access';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -63,6 +63,7 @@ export class DetailUsersCardComponent implements OnInit {
   public get vm() {
     return this._vm;
   }
+
   @Input({ required: true })
   set vm(vm: DetailUsersCardVm) {
     this._vm = vm;
@@ -74,6 +75,8 @@ export class DetailUsersCardComponent implements OnInit {
         username: vm.user.username,
         city: vm.user.city,
       });
+      const storyPoints = vm.user.totalStoryPoints ?? 0;
+      this.totalStoryPoints.setValue(storyPoints);
     }
 
     if (vm.editMode) {
@@ -98,15 +101,18 @@ export class DetailUsersCardComponent implements OnInit {
   @Output() closeEditMode = new EventEmitter();
   @Output() openEditMode = new EventEmitter();
   @Output() deleteUser = new EventEmitter();
+  @Output() addStoryPoints = new EventEmitter<{ user: CreateUserDTO; onSuccessAddSP: onSuccessEditionCbType }>();
   @ViewChild('snackbar') snackbarTemplateRef!: TemplateRef<any>;
+  @ViewChild('snackbarStoryPoints') snackbarTemplateRefSP!: TemplateRef<any>;
   private dadata = inject(DadataApiService);
   public citySuggestions = this.formGroup.controls.city.valueChanges.pipe(
     debounceTime(300),
     distinctUntilChanged(),
     filter(Boolean),
-    switchMap((value) => this.dadata.getCities(value))
+    switchMap((value) => this.dadata.getCities(value)),
   );
 
+  public totalStoryPoints = new FormControl<number>({ value: 0, disabled: true });
   private snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   public areFieldsChanged$ = new BehaviorSubject<boolean>(false);
@@ -121,6 +127,30 @@ export class DetailUsersCardComponent implements OnInit {
       horizontalPosition: 'center',
       verticalPosition: 'top',
     });
+
+  private onAddSPSuccess: onSuccessEditionCbType = () =>
+    this.snackBar.openFromTemplate(this.snackbarTemplateRef, {
+      duration: 2500,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+    });
+
+  onAddStoryPoints() {
+    this.totalStoryPoints.disable();
+
+    const storyPointsValue = this.totalStoryPoints.value ?? 0;
+
+    this.addStoryPoints.emit({
+      user: {
+        name: this.formGroup.value.name || '',
+        email: this.formGroup.value.email?.trim().toLowerCase() || '',
+        totalStoryPoints: storyPointsValue,
+        purchaseDate: new Date().toString(),
+        educationStatus: 'trainee'
+      },
+      onSuccessAddSP: this.onAddSPSuccess,
+    });
+  }
 
   onSubmit(): void {
     this.editUser.emit({
@@ -168,7 +198,7 @@ export class DetailUsersCardComponent implements OnInit {
           const isFieldChanged = formEntries.some(([key, control]) => isFormControlChanged(key, control));
 
           this.areFieldsChanged$.next(isFieldChanged);
-        })
+        }),
       )
       .subscribe();
   }

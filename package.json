@@ -30,6 +30,7 @@
     "@nx/angular": "20.8.0",
     "@tailwindcss/postcss": "^4.1.4",
     "bootstrap": "^5.2.3",
+    "caniuse-lite": "^1.0.30001747",
     "chart.js": "^4.4.0",
     "highcharts": "^12.2.0",
     "highcharts-angular": "^4.0.1",
