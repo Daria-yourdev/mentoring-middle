@@ -1,4 +1,21 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import * as fromMaterials from './materials.reducer';
+import { MaterialsState, MATERIALS_FEATURE_KEY, materialsAdapter } from './materials.reducer';
 
-export const selectMaterialsState = createFeatureSelector<fromMaterials.State>(fromMaterials.materialsFeatureKey);
+export const selectMaterialsState = createFeatureSelector<MaterialsState>(MATERIALS_FEATURE_KEY);
+
+const { selectAll, selectEntities } = materialsAdapter.getSelectors();
+
+export const selectFoldersStatus = createSelector(
+  selectMaterialsState,
+  (state: MaterialsState) => state?.status || 'init'
+)
+
+export const selectAllFolders = createSelector(
+  selectMaterialsState,
+  (state: MaterialsState) => state ? selectAll(state) : []
+)
+
+export const selectFoldersEntities = createSelector(
+  selectMaterialsState,
+  (state: MaterialsState) => state ? selectEntities(state) : {}
+)
