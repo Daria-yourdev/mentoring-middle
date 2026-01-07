@@ -1,43 +1,53 @@
-import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core';
-import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
-import { appRoutes } from './app.routes';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { API_URL } from '@users/core/http';
-import { environment } from '../environments/environment.development';
-import { provideEffects } from '@ngrx/effects';
-import { provideStore } from '@ngrx/store';
-import { USERS_FEATURE_KEY, usersReducer, userEffects } from '@users/users/data-access';
-import { provideStoreDevtools } from '@ngrx/store-devtools';
-import { provideRouterStore, routerReducer } from '@ngrx/router-store';
+import { ApplicationConfig, importProvidersFrom, isDevMode, provideAppInitializer } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { authEffects, authFeature, tokenInterceptor } from '@auth/data-access';
-import { SettingsEffects, settingsFeature } from '@users/settings/data-access';
-import { DADATA_TOKEN } from '@users/core/dadata';
+import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
+import { provideEffects } from '@ngrx/effects';
+import { provideRouterStore, routerReducer } from '@ngrx/router-store';
+import { provideStore } from '@ngrx/store';
+import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { provideQuillConfig } from 'ngx-quill/config';
-import { articlesEffects, articlesFeature, commentsEffects, commentsFeature } from '@users/users/articles/data-access';
-import { tasksEffects, tasksFeature } from '@users/users/task/data-access';
-import { CLIENT_ID, githubApiEffects, githubApiFeature } from '@users/core/github-api/data-access';
-import { backlogFeature, backlogEffects } from '@users/users/backlog/data-access';
-import { MaterialsEffects, materialsFeature } from '@users/materials/data-access';
 
-export function HttpLoaderFactory(http: HttpClient) {
+import { API_URL } from '@core/data-access-api';
+import { tokenInterceptor } from '@core/data-access-interceptors';
+import { ADDRESS_API_KEY, ADDRESS_API_URL } from '@shared/data-access-address';
+import { GITHUB_CLIENT_ID, githubApiFeature, githubEffects } from '@shared/data-access-github';
+import { initializeTheme, THEMES, THEMES_TOKEN } from '@shared/data-access-theme';
+import { initializeLanguage } from '@shared/util-language';
+import { articlesEffects, articlesFeature } from '@users/articles/data-access-article';
+import { commentsEffects, commentsFeature } from '@users/articles/data-access-comment';
+import { backlogEffects, backlogFeature } from '@users/backlog/data-access-backlog';
+import { authEffects, authFeature } from '@users/core/data-access-auth';
+import { SettingsEffects, settingsFeature } from '@users/settings/data-access-settings';
+import { TasksEffects, tasksFeature } from '@users/tasks/data-access-task';
+import { userEffects, USERS_FEATURE_KEY, usersReducer } from '@users/users/data-access-user';
+
+import { appRoutes } from './app.routes';
+import { environment } from '../environments/environment.development';
+
+function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);
+}
+
+function initApp(): void {
+  initializeTheme();
+  initializeLanguage();
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideAppInitializer(initApp),
     provideEffects(
       userEffects,
       authEffects,
       articlesEffects,
-      tasksEffects,
+      TasksEffects,
       commentsEffects,
-      githubApiEffects,
+      githubEffects,
       backlogEffects,
       SettingsEffects,
-      MaterialsEffects
     ),
     provideStore({
       router: routerReducer,
@@ -49,7 +59,6 @@ export const appConfig: ApplicationConfig = {
       [tasksFeature.name]: tasksFeature.reducer,
       [githubApiFeature.name]: githubApiFeature.reducer,
       [backlogFeature.name]: backlogFeature.reducer,
-      [materialsFeature.name]: materialsFeature.reducer,
     }),
     provideRouterStore(),
     provideStoreDevtools({
@@ -66,12 +75,20 @@ export const appConfig: ApplicationConfig = {
       useValue: environment.api_url,
     },
     {
-      provide: DADATA_TOKEN,
-      useValue: environment.dadata_api_key,
+      provide: ADDRESS_API_KEY,
+      useValue: environment.address_api_key,
     },
     {
-      provide: CLIENT_ID,
+      provide: ADDRESS_API_URL,
+      useValue: environment.address_api_url,
+    },
+    {
+      provide: GITHUB_CLIENT_ID,
       useValue: environment.github_client_id,
+    },
+    {
+      provide: THEMES_TOKEN,
+      useValue: THEMES,
     },
     provideAnimations(),
     provideQuillConfig({
@@ -87,7 +104,7 @@ export const appConfig: ApplicationConfig = {
           deps: [HttpClient],
         },
         defaultLanguage: 'en',
-      })
+      }),
     ),
   ],
 };
